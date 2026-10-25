@@ -48,7 +48,6 @@ export const ChatList: React.FC<ChatListProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Search & Filter Bar */}
       <div style={{ padding: '8px 12px', backgroundColor: 'var(--bg-sidebar)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <Search
@@ -75,7 +74,6 @@ export const ChatList: React.FC<ChatListProps> = ({
           />
         </div>
 
-        {/* Filter Chips */}
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button
             onClick={() => setFilterUnread(false)}
@@ -114,7 +112,6 @@ export const ChatList: React.FC<ChatListProps> = ({
         </div>
       </div>
 
-      {/* Chat List Items */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {filteredChats.length === 0 ? (
           <div
@@ -174,7 +171,6 @@ export const ChatList: React.FC<ChatListProps> = ({
                   if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
-                {/* Avatar */}
                 <div
                   style={{
                     width: '44px',
@@ -193,7 +189,6 @@ export const ChatList: React.FC<ChatListProps> = ({
                   {initials}
                 </div>
 
-                {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
                     <span

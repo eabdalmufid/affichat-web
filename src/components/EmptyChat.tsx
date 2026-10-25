@@ -60,7 +60,6 @@ export const EmptyChat: React.FC<EmptyChatProps> = ({ onOpenSettings, isConfigur
           : 'Kirim dan terima pesan WhatsApp langsung dari browser tanpa perlu install aplikasi atau database tambahan.'}
       </p>
 
-      {/* Beginner-friendly Onboarding Card when not yet configured */}
       {!isConfigured && (
         <div
           style={{
@@ -117,7 +116,6 @@ export const EmptyChat: React.FC<EmptyChatProps> = ({ onOpenSettings, isConfigur
         </div>
       )}
 
-      {/* Subtle end-to-end encryption note at bottom */}
       <div
         style={{
           display: 'flex',

@@ -159,4 +159,217 @@ export class GatewayApiClient {
       };
     }
   }
+
+  /**
+   * Send image message via AffiChat REST API
+   * Sesuai dokumentasi resmi AffiChat: POST /api/send-image
+   */
+  static async sendImageMessage(
+    settings: AppSettings,
+    params: { to: string; image: string; caption?: string }
+  ): Promise<SendMessageResponse> {
+    const baseUrl = this.sanitizeUrl(settings.gatewayUrl);
+    const apiKey = (settings.apiKey || '').trim();
+    const sessionId = (settings.sessionId || '').trim();
+
+    if (!apiKey) {
+      return { success: false, error: 'API Key belum diatur di menu Pengaturan.' };
+    }
+    if (!sessionId) {
+      return { success: false, error: 'ID Sesi WhatsApp belum diatur di menu Pengaturan.' };
+    }
+
+    const cleanTo = normalizePhoneNumber(params.to);
+    if (!cleanTo) {
+      return { success: false, error: 'Nomor tujuan tidak valid' };
+    }
+
+    try {
+      const targetUrl = new URL(`${baseUrl}/api/send-image`);
+      targetUrl.searchParams.set('key', apiKey);
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'key': apiKey,
+        'Accept': 'application/json',
+      };
+
+      const payload = {
+        sessionId: sessionId,
+        session: sessionId,
+        to: cleanTo,
+        image: params.image,
+        caption: params.caption || '',
+        is_group: cleanTo.includes('@g.us'),
+      };
+
+      const res = await fetch(targetUrl.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && (data.status === true || data.status === 'success' || data.success === true)) {
+        return {
+          success: true,
+          messageId: data.data?.key?.id || data.data?.id || data.id || `msg_${Date.now()}`,
+        };
+      } else {
+        const errorMsg = data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
+        return {
+          success: false,
+          error: errorMsg,
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `Gagal mengirim gambar: ${err.message || 'Cek koneksi internet'}`,
+      };
+    }
+  }
+
+  /**
+   * Send document message via AffiChat REST API
+   * Sesuai dokumentasi resmi AffiChat: POST /api/send-document
+   */
+  static async sendDocumentMessage(
+    settings: AppSettings,
+    params: { to: string; document: string; filename: string; caption?: string }
+  ): Promise<SendMessageResponse> {
+    const baseUrl = this.sanitizeUrl(settings.gatewayUrl);
+    const apiKey = (settings.apiKey || '').trim();
+    const sessionId = (settings.sessionId || '').trim();
+
+    if (!apiKey) {
+      return { success: false, error: 'API Key belum diatur di menu Pengaturan.' };
+    }
+    if (!sessionId) {
+      return { success: false, error: 'ID Sesi WhatsApp belum diatur di menu Pengaturan.' };
+    }
+
+    const cleanTo = normalizePhoneNumber(params.to);
+    if (!cleanTo) {
+      return { success: false, error: 'Nomor tujuan tidak valid' };
+    }
+
+    try {
+      const targetUrl = new URL(`${baseUrl}/api/send-document`);
+      targetUrl.searchParams.set('key', apiKey);
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'key': apiKey,
+        'Accept': 'application/json',
+      };
+
+      const payload = {
+        sessionId: sessionId,
+        session: sessionId,
+        to: cleanTo,
+        document: params.document,
+        filename: params.filename,
+        caption: params.caption || '',
+        is_group: cleanTo.includes('@g.us'),
+      };
+
+      const res = await fetch(targetUrl.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && (data.status === true || data.status === 'success' || data.success === true)) {
+        return {
+          success: true,
+          messageId: data.data?.key?.id || data.data?.id || data.id || `msg_${Date.now()}`,
+        };
+      } else {
+        const errorMsg = data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
+        return {
+          success: false,
+          error: errorMsg,
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `Gagal mengirim dokumen: ${err.message || 'Cek koneksi internet'}`,
+      };
+    }
+  }
+
+  /**
+   * Delete / Revoke message via AffiChat REST API
+   * Sesuai dokumentasi resmi AffiChat: POST /api/send-revoke (atau alias POST /api/delete-message)
+   */
+  static async deleteMessage(
+    settings: AppSettings,
+    params: { to: string; messageId: string }
+  ): Promise<{ success: boolean; error?: string }> {
+    const baseUrl = this.sanitizeUrl(settings.gatewayUrl);
+    const apiKey = (settings.apiKey || '').trim();
+    const sessionId = (settings.sessionId || '').trim();
+
+    if (!apiKey) {
+      return { success: false, error: 'API Key belum diatur di menu Pengaturan.' };
+    }
+    if (!sessionId) {
+      return { success: false, error: 'ID Sesi WhatsApp belum diatur di menu Pengaturan.' };
+    }
+
+    const cleanTo = normalizePhoneNumber(params.to);
+    if (!cleanTo) {
+      return { success: false, error: 'Nomor tujuan tidak valid' };
+    }
+
+    try {
+      const targetUrl = new URL(`${baseUrl}/api/send-revoke`);
+      targetUrl.searchParams.set('key', apiKey);
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'key': apiKey,
+        'Accept': 'application/json',
+      };
+
+      const payload = {
+        sessionId: sessionId,
+        session: sessionId,
+        to: cleanTo,
+        messageId: params.messageId,
+        message_id: params.messageId,
+        fromMe: true,
+        is_group: cleanTo.includes('@g.us'),
+      };
+
+      const res = await fetch(targetUrl.toString(), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && (data.status === true || data.status === 'success' || data.success === true)) {
+        return { success: true };
+      } else {
+        const errorMsg = data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
+        return { success: false, error: errorMsg };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        error: `Gagal menghapus pesan: ${err.message || 'Cek koneksi internet'}`,
+      };
+    }
+  }
 }
+

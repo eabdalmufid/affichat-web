@@ -32,4 +32,7 @@ export interface AppSettings {
   sessionId: string;
   smeeChannel: string;
   enableSound: boolean;
+  pinHash?: string | null;
+  autoLockMinutes?: number;
 }
+

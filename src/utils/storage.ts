@@ -12,6 +12,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sessionId: 'default',
   smeeChannel: '',
   enableSound: true,
+  pinHash: null,
+  autoLockMinutes: 5,
 };
 
 export function loadSettings(): AppSettings {
@@ -69,6 +71,33 @@ export function saveMessages(messages: Record<string, Message[]>): void {
 export function clearAllData(): void {
   localStorage.removeItem(CHATS_KEY);
   localStorage.removeItem(MESSAGES_KEY);
+  localStorage.removeItem('affichat_last_active_at');
+}
+
+export function touchLastActive(): void {
+  try {
+    localStorage.setItem('affichat_last_active_at', String(Date.now()));
+  } catch {}
+}
+
+export function clearLastActive(): void {
+  try {
+    localStorage.removeItem('affichat_last_active_at');
+  } catch {}
+}
+
+export function checkIsAppLocked(settings: AppSettings): boolean {
+  if (!settings.pinHash) return false;
+  const minutes = settings.autoLockMinutes ?? 5;
+  if (minutes === 0) return true;
+
+  const raw = localStorage.getItem('affichat_last_active_at');
+  if (!raw) return true;
+
+  const lastActive = parseInt(raw, 10);
+  if (isNaN(lastActive)) return true;
+
+  return Date.now() - lastActive >= minutes * 60 * 1000;
 }
 
 export function exportBackup(): string {

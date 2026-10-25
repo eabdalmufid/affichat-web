@@ -57,7 +57,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onS
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div
           style={{
             display: 'flex',
@@ -88,7 +87,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onS
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ padding: '18px' }}>
           {error && (
             <div
@@ -171,7 +169,6 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ isOpen, onClose, onS
             </div>
           </div>
 
-          {/* Buttons */}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
             <button
               type="button"

@@ -171,7 +171,7 @@ export class WebhookReceiver {
       chatId,
       fromMe: false,
       senderName: pushName || undefined,
-      text: text || (mediaObj?.image ? '[Foto]' : mediaObj?.document ? '[Dokumen]' : mediaObj?.audio ? '[Audio]' : '[Pesan]'),
+      text: text || (mediaObj?.image ? '[Foto]' : mediaObj?.video ? '[Video]' : mediaObj?.document ? '[Dokumen]' : mediaObj?.audio ? '[Audio]' : '[Pesan]'),
       timestamp: isNaN(timestamp) ? Date.now() : timestamp,
       status: 'read',
       media: mediaObj,

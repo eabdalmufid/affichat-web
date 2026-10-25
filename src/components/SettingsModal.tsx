@@ -11,11 +11,14 @@ import {
   Download,
   ExternalLink,
   AlertTriangle,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import type { AppSettings } from '../types';
 import { exportBackup, clearAllData } from '../utils/storage';
 import type { WebhookStatus } from '../services/webhookReceiver';
 import { GatewayApiClient } from '../services/gatewayApi';
+import { hashPin, verifyPin } from '../utils/security';
 import logoImg from '../assets/logo-nobg.png';
 
 interface SettingsModalProps {
@@ -40,13 +43,92 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isTestingKey, setIsTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Sync state when modal opens or settings change
+  const [pinDialogMode, setPinDialogMode] = useState<'setup' | 'change' | 'disable' | null>(null);
+  const [oldPinInput, setOldPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmPinInput, setConfirmPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinSuccessMsg, setPinSuccessMsg] = useState<string | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       setFormData({ ...settings });
       setTestResult(null);
+      setPinDialogMode(null);
+      setPinError(null);
+      setPinSuccessMsg(null);
     }
   }, [isOpen, settings]);
+
+  const handleOpenPinDialog = (mode: 'setup' | 'change' | 'disable') => {
+    setPinDialogMode(mode);
+    setOldPinInput('');
+    setNewPinInput('');
+    setConfirmPinInput('');
+    setPinError(null);
+  };
+
+  const handleApplyPinAction = async () => {
+    setPinError(null);
+
+    if (pinDialogMode === 'setup') {
+      if (!/^\d{4,8}$/.test(newPinInput)) {
+        setPinError('PIN harus berupa 4 hingga 8 digit angka.');
+        return;
+      }
+      if (newPinInput !== confirmPinInput) {
+        setPinError('Konfirmasi PIN tidak cocok.');
+        return;
+      }
+      const hashed = await hashPin(newPinInput);
+      const updated = { ...formData, pinHash: hashed };
+      setFormData(updated);
+      onSaveSettings(updated);
+      setPinDialogMode(null);
+      setPinSuccessMsg('PIN keamanan berhasil diaktifkan!');
+      setTimeout(() => setPinSuccessMsg(null), 3500);
+      return;
+    }
+
+    if (pinDialogMode === 'disable') {
+      const isValid = await verifyPin(oldPinInput, formData.pinHash || '');
+      if (!isValid) {
+        setPinError('PIN saat ini salah.');
+        return;
+      }
+      const updated = { ...formData, pinHash: null };
+      setFormData(updated);
+      onSaveSettings(updated);
+      setPinDialogMode(null);
+      setPinSuccessMsg('PIN keamanan dinonaktifkan.');
+      setTimeout(() => setPinSuccessMsg(null), 3500);
+      return;
+    }
+
+    if (pinDialogMode === 'change') {
+      const isValid = await verifyPin(oldPinInput, formData.pinHash || '');
+      if (!isValid) {
+        setPinError('PIN lama salah.');
+        return;
+      }
+      if (!/^\d{4,8}$/.test(newPinInput)) {
+        setPinError('PIN baru harus berupa 4 hingga 8 digit angka.');
+        return;
+      }
+      if (newPinInput !== confirmPinInput) {
+        setPinError('Konfirmasi PIN baru tidak cocok.');
+        return;
+      }
+      const hashed = await hashPin(newPinInput);
+      const updated = { ...formData, pinHash: hashed };
+      setFormData(updated);
+      onSaveSettings(updated);
+      setPinDialogMode(null);
+      setPinSuccessMsg('PIN berhasil diperbarui!');
+      setTimeout(() => setPinSuccessMsg(null), 3500);
+      return;
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -124,7 +206,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Sticky Header */}
         <div
           style={{
             display: 'flex',
@@ -168,10 +249,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '18px' }}>
-            {/* Gateway Info Banner */}
             <div
               style={{
                 display: 'flex',
@@ -192,7 +271,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            {/* 1. API Key Field */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
@@ -286,7 +364,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            {/* 2. Session ID Field */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
@@ -359,7 +436,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </span>
             </div>
 
-            {/* 3. Webhook Receiver Guide & Field */}
             <div
               style={{
                 marginBottom: '18px',
@@ -469,7 +545,307 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               )}
             </div>
 
-            {/* 4. Sound Notification */}
+            <div
+              style={{
+                padding: '14px',
+                backgroundColor: 'var(--bg-header)',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Lock size={16} color="var(--accent)" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Kunci Layar & PIN Keamanan
+                  </span>
+                </div>
+                {formData.pinHash ? (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--accent)',
+                      backgroundColor: 'rgba(0, 168, 132, 0.12)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <ShieldCheck size={12} /> PIN Aktif
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--text-muted)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    Belum Aktif
+                  </span>
+                )}
+              </div>
+
+              <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                Kunci tampilan obrolan dengan PIN saat meminjamkan laptop/smartphone kepada orang lain.
+              </p>
+
+              {pinSuccessMsg && (
+                <div
+                  style={{
+                    padding: '8px 10px',
+                    backgroundColor: 'rgba(0, 168, 132, 0.12)',
+                    border: '1px solid rgba(0, 168, 132, 0.25)',
+                    color: 'var(--accent)',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  {pinSuccessMsg}
+                </div>
+              )}
+
+              {pinDialogMode && (
+                <div
+                  style={{
+                    padding: '12px',
+                    backgroundColor: 'var(--bg-input)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
+                    marginBottom: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {pinDialogMode === 'setup' && 'Buat PIN Keamanan Baru (4-8 Angka)'}
+                    {pinDialogMode === 'change' && 'Ubah PIN Keamanan'}
+                    {pinDialogMode === 'disable' && 'Konfirmasi Nonaktifkan PIN'}
+                  </div>
+
+                  {pinError && (
+                    <div style={{ fontSize: '11px', color: 'var(--danger)' }}>
+                      {pinError}
+                    </div>
+                  )}
+
+                  {(pinDialogMode === 'change' || pinDialogMode === 'disable') && (
+                    <div>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                        PIN Saat Ini
+                      </label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        placeholder="Masukkan PIN saat ini"
+                        value={oldPinInput}
+                        onChange={(e) => setOldPinInput(e.target.value.replace(/\D/g, ''))}
+                        maxLength={8}
+                        style={{
+                          width: '100%',
+                          padding: '7px 10px',
+                          backgroundColor: 'var(--bg-header)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          color: 'var(--text-primary)',
+                          fontSize: '13px',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {(pinDialogMode === 'setup' || pinDialogMode === 'change') && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                          PIN Baru (4-8 Digit Angka)
+                        </label>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          placeholder="Contoh: 1234"
+                          value={newPinInput}
+                          onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, ''))}
+                          maxLength={8}
+                          style={{
+                            width: '100%',
+                            padding: '7px 10px',
+                            backgroundColor: 'var(--bg-header)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)',
+                            fontSize: '13px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                          Ulangi PIN Baru
+                        </label>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          placeholder="Konfirmasi PIN baru"
+                          value={confirmPinInput}
+                          onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, ''))}
+                          maxLength={8}
+                          style={{
+                            width: '100%',
+                            padding: '7px 10px',
+                            backgroundColor: 'var(--bg-header)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)',
+                            fontSize: '13px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPinDialogMode(null)}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: 'transparent',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        color: 'var(--text-muted)',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyPinAction}
+                      style={{
+                        padding: '6px 14px',
+                        backgroundColor: pinDialogMode === 'disable' ? 'var(--danger)' : 'var(--accent)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#FFFFFF',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {pinDialogMode === 'disable' ? 'Nonaktifkan' : 'Simpan PIN'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!pinDialogMode && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {formData.pinHash ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPinDialog('change')}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: 'transparent',
+                          border: '1px solid var(--border)',
+                          borderRadius: '6px',
+                          color: 'var(--text-primary)',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Ubah PIN
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPinDialog('disable')}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: 'transparent',
+                          border: '1px solid rgba(241, 92, 109, 0.3)',
+                          borderRadius: '6px',
+                          color: 'var(--danger)',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Nonaktifkan PIN
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPinDialog('setup')}
+                      style={{
+                        padding: '7px 14px',
+                        backgroundColor: 'var(--accent)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#FFFFFF',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Lock size={13} />
+                      Pasang PIN Keamanan
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {formData.pinHash && !pinDialogMode && (
+                <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Kunci otomatis jika tidak aktif:
+                    </label>
+                    <select
+                      value={formData.autoLockMinutes ?? 5}
+                      onChange={(e) => setFormData({ ...formData, autoLockMinutes: Number(e.target.value) })}
+                      style={{
+                        padding: '5px 8px',
+                        backgroundColor: 'var(--bg-input)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        color: 'var(--text-primary)',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value={0}>Segera (saat reload/tutup tab)</option>
+                      <option value={1}>1 Menit</option>
+                      <option value={5}>5 Menit (Rekomendasi)</option>
+                      <option value={15}>15 Menit</option>
+                      <option value={60}>1 Jam</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div
               style={{
                 display: 'flex',
@@ -494,7 +870,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             </div>
 
-            {/* 5. Backup & Clear History */}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
@@ -546,7 +921,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Sticky Footer Actions (Always visible at bottom) */}
           <div
             style={{
               display: 'flex',

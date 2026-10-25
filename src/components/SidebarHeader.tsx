@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquarePlus, Settings } from 'lucide-react';
+import { MessageSquarePlus, Settings, Lock } from 'lucide-react';
 import type { WebhookStatus } from '../services/webhookReceiver';
 import logoImg from '../assets/logo-nobg.png';
 
@@ -8,6 +8,8 @@ interface SidebarHeaderProps {
   onOpenSettings: () => void;
   webhookStatus: WebhookStatus;
   sessionId: string;
+  hasPin?: boolean;
+  onLockNow?: () => void;
 }
 
 export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
@@ -15,6 +17,8 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
   onOpenSettings,
   webhookStatus,
   sessionId,
+  hasPin,
+  onLockNow,
 }) => {
   const isOnline = webhookStatus === 'connected';
 
@@ -31,7 +35,6 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         boxSizing: 'border-box',
       }}
     >
-      {/* Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <img
           src={logoImg}
@@ -76,8 +79,38 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {hasPin && (
+          <button
+            onClick={onLockNow}
+            title="Kunci Layar Sekarang (Amankan Chat)"
+            aria-label="Kunci Layar Sekarang"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.15s ease, color 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.color = '#00A884';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
+            <Lock size={19} />
+          </button>
+        )}
+
         <button
           onClick={onOpenNewChat}
           title="Mulai Chat Baru"
