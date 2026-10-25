@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-app: #0b0f12;
+  --bg-sidebar: #111b21;
+  --bg-header: #202c33;
+  --bg-chat: #0b141a;
+  --bg-input: #2a3942;
+  --bg-hover: #1c272e;
+  --bg-selected: #2a3942;
+  --bg-bubble-in: #202c33;
+  --bg-bubble-out: #005c4b;
+  --accent: #00a884;
+  --accent-hover: #008f6f;
+  --accent-tint: rgba(0, 168, 132, 0.15);
+  --text-primary: #e6ecef;
+  --text-secondary: #8696a0;
+  --text-muted: #667781;
+  --border: #222d35;
+  --border-hover: #2d3c46;
+  --danger: #f15c6d;
+  --danger-hover: #d03d4f;
+  --warning: #f5a623;
+  --blue-tick: #53bdeb;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #222d35;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2d3c46;
+}
+::-webkit-scrollbar-thumb:active {
+  background: #00a884;
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Authentic WhatsApp Chat Background */
+.wa-chat-bg {
+  background-color: var(--bg-chat);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Dynamic Viewport & Transitions */
+.app-container {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  max-width: 100vw;
+  background-color: var(--bg-app);
+  overflow: hidden;
+}
+
+.sidebar-pane {
+  width: 400px;
+  min-width: 320px;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  height: 100%;
+  position: relative;
+}
+
+.chat-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background-color: var(--bg-chat);
+  min-width: 0; /* Prevents flex child overflow */
+}
+
+/* Touch targets and interactive feedback */
+button:active {
+  opacity: 0.85;
+}
+
+/* Intermediate Tablet Breakpoint (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar-pane {
+    width: 330px;
+    min-width: 290px;
+  }
+}
+
+/* Mobile Breakpoint (<768px) */
+@media (max-width: 768px) {
+  .sidebar-pane {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-right: none;
+  }
+  .sidebar-pane.hidden-mobile {
+    display: none;
+  }
+  .chat-pane.hidden-mobile {
+    display: none;
+  }
+}
